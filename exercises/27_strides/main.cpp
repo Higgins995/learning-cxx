@@ -1,4 +1,5 @@
 ﻿#include "../exercise.h"
+#include <cstddef>
 #include <vector>
 
 // 张量即多维数组。连续存储张量即逻辑结构与存储结构一致的张量。
@@ -18,6 +19,67 @@ std::vector<udim> strides(std::vector<udim> const &shape) {
     // TODO: 完成函数体，根据张量形状计算张量连续存储时的步长。
     // READ: 逆向迭代器 std::vector::rbegin <https://zh.cppreference.com/w/cpp/container/vector/rbegin>
     //       使用逆向迭代器可能可以简化代码
+
+    // V1: 使用索引访问元素
+#if 0
+    for (size_t index = 0; index < strides.size(); ++index) {
+        udim stride = 1;
+        for (size_t idx = index + 1; idx < shape.size(); ++idx) {
+            stride *= shape[idx];
+        }
+
+        strides[index] = stride;
+    }
+#endif
+
+    // V1算法优化版
+#if 0
+    udim stride = 1;
+    for (size_t index = 0; index < shape.size(); ++index) {
+        stride *= shape[index];
+    }
+
+    for (size_t index = 0; index < strides.size(); ++index) {
+        stride /= shape[index];
+        strides[index] = stride;
+    }
+#endif
+
+    // V2: 使用迭代器访问元素
+#if 0
+    strides.clear();
+    for (size_t index = 0; index < shape.size(); ++index) {
+        udim stride = 1;
+        for (auto iter = (shape.begin() + index + 1); iter != shape.end(); ++iter) {
+            stride *= (*iter);
+        }
+    
+        strides.push_back(stride);
+    }
+#endif
+
+    // V2算法优化版
+#if 0
+    strides.clear();
+    strides.push_back(1);
+    for (auto iter = (shape.begin() + 1); iter != shape.end(); ++iter) {
+        *strides.begin() *= (*iter);
+    }
+
+    for (auto iter = (shape.begin() + 1); iter != shape.end(); ++iter) {
+        strides.push_back(strides.back() / (*iter));
+    }
+#endif
+
+    // V2代码简化版
+#if 1
+    strides.clear();
+    strides.push_back(1);
+    for (auto riter = shape.rbegin(); riter != (shape.rend() - 1); ++riter) {
+        strides.insert(strides.begin(), ((*strides.begin()) * (*riter)));
+    }
+#endif
+
     return strides;
 }
 

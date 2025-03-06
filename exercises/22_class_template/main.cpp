@@ -1,4 +1,5 @@
 ﻿#include "../exercise.h"
+#include <cstddef>
 #include <cstring>
 // READ: 类模板 <https://zh.cppreference.com/w/cpp/language/class_template>
 
@@ -10,6 +11,8 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        std::memcpy(shape, shape_, 4 * sizeof(*shape_));
+        size = shape[0] * shape[1] * shape[2] * shape[3];
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -28,6 +31,31 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
+        size_t size = 1;
+        for (size_t index = 0; index < sizeof(shape) / sizeof(*shape); ++index) {
+            size *= shape[index];
+        }
+
+        for (size_t index = 0; index < size; ++index) {
+            // 将索引转换成坐标
+            int x = index % shape[3];
+            int y = (index / shape[3]) % shape[2];
+            int z = ((index / shape[3]) / shape[2]) % shape[1];
+            int a = (((index / shape[3]) / shape[2]) / shape[1]) % shape[0];
+
+            int x1 = (shape[3] != others.shape[3]) ? 0 : x;
+            int y1 = (shape[2] != others.shape[2]) ? 0 : y;
+            int z1 = (shape[1] != others.shape[1]) ? 0 : z;
+            int a1 = (shape[0] != others.shape[0]) ? 0 : a;
+
+            int tmpIndex = a1 * others.shape[1] * others.shape[2] * others.shape[3] +
+                           z1 * others.shape[2] * others.shape[3] +
+                           y1 * others.shape[3] +
+                           x1;
+
+            data[index] += others.data[tmpIndex];
+        }
+
         return *this;
     }
 };
